@@ -194,9 +194,9 @@ function MLVimportMain(obj){
     strInDir = "F:\\DCIM\\100EOS5D";
     strOutDir = "D:\\jpvideo\\aaa";
     
-    //mlvdump(strInFolder,strOutDir);
-    //FindDNGFolder(new Folder(strOutDir));
-    //ImportFootage();
+    mlvdump(strInFolder,strOutDir);
+    FindDNGFolder(new Folder(strOutDir));
+    ImportFootage();
     CreateProxy(strOutDir);
 }   
 
