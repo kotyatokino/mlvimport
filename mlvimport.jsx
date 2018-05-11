@@ -3,9 +3,14 @@ function mlvdump(strInPath,strOutPath){
     //
     var mlvdumpPath = app.settings.getSetting("MLVimport","mlvdumpPath");
     var insFolIn = new Folder(strInPath);
+    var insFolOut = new Folder(strOutPath);
 
     if(!insFolIn.exists){
         alert("Invalid Import folder");
+         return -1;
+    }   
+    if(!insFolOut.exists){
+        alert("Invalid Output folder");
          return -1;
     }   
 
