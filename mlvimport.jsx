@@ -3,6 +3,11 @@ function mlvdump(strInPath,strOutPath){
     //
     var mlvdumpPath = app.settings.getSetting("MLVimport","mlvdumpPath");
     var insFolIn = new Folder(strInPath);
+    $.writeln("--------------------\n"+insFulIn+"--------------------");
+    if(!insFolIn){
+        alert("Invalid Import folder");
+        return;
+    }   
     var lstFiles = insFolIn.getFiles();
     var expMLV = new RegExp("\.mlv$");
     for(var i in lstFiles){
@@ -152,7 +157,7 @@ function importFile(file, isSequence) {
     item = app.project.importFile(importOptions);
     if(!!item){
 	//set footage property
-	var intFR = app.settings.getSetting("MLVimport","footageFrameRate");
+	var intFR = app.settings.getSetting("MLVimport","fps");
 	if ((item instanceof FootageItem) &&
 	    !item.isStill) {
 	    item.mainSource.conformFrameRate = intFR;
@@ -183,22 +188,147 @@ function CreateProxy(strOutDir){
 //    app.project.renderQueue.render();    
 }
 
-function MLVimportMain(obj){
+function ShowDLG(){
+    var strDumpPath = app.settings.getSetting("MLVimport","mlvdumpPath");
+    var strInDir = app.settings.getSetting("MLVimport","indir");
+    var strOutDir = app.settings.getSetting("MLVimport","outdir");
+    var intFPS = app.settings.getSetting("MLVimport","fps");
+
+
+    var dlg = new Window('window', 'MLVimport', undefined, {
+	resizeable: false,
+	closeButton: true,
+	maximizeButton: false,
+	minimizeButton: true,
+	independant: false,
+	borderless: false
+    });
+    dlg.orientation = 'column';
+    dlg.alignChildren = 'fill';
+    
+    /* -- begin import section -- */
+    dlg.grpTop = dlg.add('group');
+    dlg.grpTop.orientation = 'column';
+    dlg.grpTop.alignChildren = 'fill';
+
+    //in out folder panel
+    dlg.pnlDir = dlg.grpTop.add('panel', undefined, "Import Settings");
+    dlg.pnlDir.orientation = 'column';
+    dlg.pnlDir.alignChildren = 'fill';
+
+    //in path
+    dlg.grpInFolder = dlg.pnlDir.add('group');
+    dlg.grpInFolder.orientation = 'row';
+    dlg.grpInFolder.alignChildren = ['fill', 'center'];
+
+    dlg.grpInFolder.add('statictext',[30, 13, 80, 33], '.mlv dir');
+    
+    dlg.etInFolder = dlg.grpInFolder.add('edittext', undefined,strInDir);
+    dlg.btnInFolderIn = dlg.grpInFolder.add('button', undefined,"dir");
+    dlg.btnInFolderIn.alignment = ['right', 'center'];
+
+    //outpath
+    dlg.grpOutFolder = dlg.pnlDir.add('group');
+    dlg.grpOutFolder.orientation = 'row';
+    dlg.grpOutFolder.alignChildren = ['fill', 'center'];
+
+    dlg.grpOutFolder.add('statictext',[30, 34, 80, 54], 'Out dir');
+
+    dlg.etOutFolder = dlg.grpOutFolder.add('edittext', undefined,strOutDir);
+    dlg.btnOutFolderOut = dlg.grpOutFolder.add('button', undefined,"dir");
+    dlg.btnOutFolderOut.alignment = ['right', 'center'];
+
+    //FPS
+    dlg.grpFPS = dlg.pnlDir.add('group');
+    dlg.grpFPS.orientation = 'row';
+    dlg.grpFPS.alignChildren = ['fill', 'center'];
+    //dlg.etFPS = dlg.grpFPS.add('text','aaa');
+    dlg.grpFPS.add('statictext',[30, 34, 80, 54], 'FPS:');
+
+    dlg.etFPS = dlg.grpFPS.add('edittext',undefined,intFPS);
+
+    /* next panel (settings)*/
+    //settings panel
+    dlg.pnlSettings = dlg.grpTop.add('panel', undefined, "Settings");
+    dlg.pnlSettings.orientation = 'column';
+    dlg.pnlSettings.alignChildren = 'fill';
+
+    //mlv_dump path
+    dlg.grpDumpPath = dlg.pnlSettings.add('group');
+    dlg.grpDumpPath.orientation = 'row';
+    dlg.grpDumpPath.alignChildren = ['fill', 'center'];
+    dlg.grpDumpPath.add('statictext',[30, 34, 80, 54], 'mlv_dump.exe:');
+    dlg.etDumpPath = dlg.grpDumpPath.add('edittext',undefined,strDumpPath);
+    dlg.btnDumpPath = dlg.grpDumpPath.add('button', undefined,"dir");
+
+
+    // var myRQ = app.project.renderQueue;
+    // var myTemplate = myRQ.item(1).templates;
+    // alert(myTemplate[1]);	
+
+    
+    var btnOk = dlg.add("button", [55, 100, 140, 135], "OK");
+    var btnCancel = dlg.add("button", [155, 100, 240, 135], "Cancel");
+    btnCancel.onClick = function(){
+	dlg.close();
+    }
+
+    btnOk.onClick = function(){
+        var strInDir = dlg.etInFolder.text;
+        var strOutDir = dlg.etOutFolder.text;
+	var strFPS = dlg.etFPS.text;
+	var strDumpPath = dlg.etDumpPath.text;
+
+	//validate
+	var intFPS = parseInt(strFPS)
+	if(intFPS < 1 || intFPS > 120){
+	    alert("invalid FPS value(1-120)");
+	    return;
+	}
+	if(strInDir.length == 0){
+	    alert("no InDir specified");
+	    return;
+	}
+	if(strOutDir.length == 0){
+	    alert("no OutDir specified");
+	    return;
+	}
+	if(strDumpPath.length == 0){
+	    alert("no DumpPath specified");
+	    return;
+	}
+	
+        app.settings.saveSetting("MLVimport","indir",strInDir);
+        app.settings.saveSetting("MLVimport","outdir",strOutDir);
+        app.settings.saveSetting("MLVimport","fps",intFPS);
+        app.settings.saveSetting("MLVimport","mlvdumpPath",strDumpPath);
+
+	mlvdump(strInDir,strOutDir);
+	FindDNGFolder(new Folder(strOutDir));
+	ImportFootage();
+	CreateProxy(strOutDir);
+	
+    }
+    
+    dlg.show();
+}
+
+function InitDefaults(){
     if(!app.settings.haveSetting("MLVimport","mlvdumpPath")){
         app.settings.saveSetting("MLVimport","mlvdumpPath","d:\\jpvideo\\mlv_dump.exe");
     }
-    if(!app.settings.haveSetting("MLVimport","footageFrameRate")){
-        app.settings.saveSetting("MLVimport","footageFrameRate",24);
+    if(!app.settings.haveSetting("MLVimport","fps")){
+        app.settings.saveSetting("MLVimport","fps",24);
     }
-
-    strInDir = "F:\\DCIM\\100EOS5D";
-    strOutDir = "D:\\jpvideo\\aaa";
+    if(!app.settings.haveSetting("MLVimport","indir")){
+        app.settings.saveSetting("MLVimport","indir","F:\\DCIM\\100EOS5D");
+    }
+    if(!app.settings.haveSetting("MLVimport","outdir")){
+        app.settings.saveSetting("MLVimport","outdir","D:\\jpvideo\\aaa");
+    }
     
-    mlvdump(strInFolder,strOutDir);
-    FindDNGFolder(new Folder(strOutDir));
-    ImportFootage();
-    CreateProxy(strOutDir);
 }   
 
 
-MLVimportMain(this);
+InitDefaults();
+ShowDLG();
