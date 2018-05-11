@@ -1,4 +1,24 @@
-﻿
+﻿function progress(){
+     var win = new Window("palette","loading…");  
+ var maxT = 100;  
+ win.progressbar = win.add("Progressbar",[10,10,300,20],0,maxT);  
+ win.center();  
+ win.show();  
+ 
+  win.progressbar.value = 0;  
+  win.update();  
+ 
+    function close(){
+          win.close();  
+        }
+    function updatepct(intVal){
+         win.progressbar.value = intVal;  
+  win.update();
+        }
+    return {close:close,
+        updatepct:updatepct}
+ }
+
 function mlvdump(strInPath,strOutPath){
     //
     var mlvdumpPath = app.settings.getSetting("MLVimport","mlvdumpPath");
@@ -21,7 +41,14 @@ function mlvdump(strInPath,strOutPath){
 
     var lstFiles = insFolIn.getFiles();
     var expMLV = new RegExp("\.mlv$");
-    var intCount=0;
+    var intCount=lstFiles.length;
+    var p = progress();
+        if(intCount==0){
+        alert("No MLV file exists in specified in dir");
+        return -1
+    }
+    var intIncrease = 100/intCount;
+    var pct = intIncrease;
     for(var i in lstFiles){
         var f = lstFiles[i];
         if(!f instanceof File) continue;
@@ -39,18 +66,10 @@ function mlvdump(strInPath,strOutPath){
         //$.writeln(strCmd);
         var strRet = system.callSystem(strCmd);
         //$.writeln(strRet);
-        /* // File::execute() is async
-           var bat = new File(strOutPath + "\\" + f.name + ".bat");
-           bat.open("w");
-           bat.write (strCmd);
-           bat.close();
-           bat.execute()
-        */
+        p.updatepct(pct);
+        pct += intIncrease
     }
-    if(intCount==0){
-        alert("No MLV file exists in specified in dir");
-        return -1
-    }
+
 }
 
 
@@ -290,6 +309,7 @@ function ShowDLG(){
     }
 
     btnOk.onClick = function(){
+        dlg.close();
         var strInDir = dlg.etInFolder.text;
         var strOutDir = dlg.etOutFolder.text;
 	var strFPS = dlg.etFPS.text;
