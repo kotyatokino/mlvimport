@@ -2,15 +2,20 @@
 function mlvdump(strInPath,strOutPath){
     //
     var mlvdumpPath = app.settings.getSetting("MLVimport","mlvdumpPath");
+    var insMD = new File(mlvdumpPath);
     var insFolIn = new Folder(strInPath);
     var insFolOut = new Folder(strOutPath);
 
+    if(!insMD.exists){
+        alert("Invalid mlv_dump path: No such file");
+         return -1;
+    }   
     if(!insFolIn.exists){
-        alert("Invalid Import folder");
+        alert("Invalid Import folder: No such dir");
          return -1;
     }   
     if(!insFolOut.exists){
-        alert("Invalid Output folder");
+        alert("Invalid Output folder:No such dir");
          return -1;
     }   
 
