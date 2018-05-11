@@ -3,18 +3,20 @@ function mlvdump(strInPath,strOutPath){
     //
     var mlvdumpPath = app.settings.getSetting("MLVimport","mlvdumpPath");
     var insFolIn = new Folder(strInPath);
-    $.writeln("--------------------\n"+insFulIn+"--------------------");
-    if(!insFolIn){
+
+    if(!insFolIn.exists){
         alert("Invalid Import folder");
-        return;
+         return -1;
     }   
+
     var lstFiles = insFolIn.getFiles();
     var expMLV = new RegExp("\.mlv$");
+    var intCount=0;
     for(var i in lstFiles){
         var f = lstFiles[i];
         if(!f instanceof File) continue;
         if(!f.name.toLowerCase().match(expMLV)) continue;
-        
+        intCount++;
         //var strCmd = "cmd.exe /q /c" +
         var strBasename = f.name.replace(/\.[^\.]+$/, '');
         
@@ -34,6 +36,10 @@ function mlvdump(strInPath,strOutPath){
            bat.close();
            bat.execute()
         */
+    }
+    if(intCount==0){
+        alert("No MLV file exists in specified in dir");
+        return -1
     }
 }
 
@@ -303,7 +309,9 @@ function ShowDLG(){
         app.settings.saveSetting("MLVimport","fps",intFPS);
         app.settings.saveSetting("MLVimport","mlvdumpPath",strDumpPath);
 
-	mlvdump(strInDir,strOutDir);
+	if(mlvdump(strInDir,strOutDir)== -1){
+        return;
+    }
 	FindDNGFolder(new Folder(strOutDir));
 	ImportFootage();
 	CreateProxy(strOutDir);
