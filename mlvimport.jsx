@@ -1,11 +1,12 @@
-﻿function progress(intMax){ 
+﻿function progress(intMax){
+  $.writeln("pMAX:"+intMax);
   var win = new Window("palette","Extracting DNG...");
   if(intMax==undefined){
-    intMax = 100;
+      intMax = 100;
   }
   win.progressbar = win.add("Progressbar",[10,10,300,20],0,intMax);  
   win.center();  
-  win.show();  
+  win.show();
   
   win.progressbar.value = 0;  
   win.update();  
@@ -16,7 +17,6 @@
   function updatepct(intVal){
     win.progressbar.value = intVal;  
     win.update();
-    win.show();
   }
   return {close:close,
           updatepct:updatepct}
@@ -40,17 +40,27 @@ function mlvdump(strInPath,strOutPath){
   if(!insFolOut.exists){
     alert("Invalid Output folder:No such dir("+strOutPath+")");
     return -1;
-  }   
+  }
 
   var lstFiles = insFolIn.getFiles();
   var expMLV = new RegExp("\.mlv$");
-  var intFilenum=lstFiles.length;
-  var p = progress(intFilenum);
-  if(intCount==0){
+  //count mlv file
+  var intFilenum=0;
+  for(var i in lstFiles){
+    var f = lstFiles[i];
+    if(!f instanceof File) continue;
+    if(!f.name.toLowerCase().match(expMLV)) continue;
+    //var strCmd = "cmd.exe /q /c" +
+    intFilenum++;
+  }
+
+  if(intFilenum==0){
     alert("No MLV file exists in specified in dir");
     return -1
   }
-  var intCout=1;
+  // var p = progress(intFilenum);
+
+  var intCount=1;
   for(var i in lstFiles){
     var f = lstFiles[i];
     if(!f instanceof File) continue;
@@ -67,10 +77,10 @@ function mlvdump(strInPath,strOutPath){
     //$.writeln(strCmd);
     var strRet = system.callSystem(strCmd);
     //$.writeln(strRet);
-    p.updatepct(intCount);
-    intCount++;
+    // p.updatepct(intCount);
+    // intCount++;
   }
-
+  // p.close();
 }
 
 
@@ -203,24 +213,34 @@ function importFile(file, isSequence) {
   //add composition
   var strBasename = file.path.replace(/\.[^\.]+$/, '');
   strBasename = strBasename.replace(/^.*\//,'');
-  var comp = app.project.items.addComp(strBasename, item.width, item.height, item.pixelAspect, item.frameDuration, item.frameRate);
+  $.writeln("dul:"+item.frameDuration);
+  var comp = app.project.items.addComp(strBasename,
+				       item.width,
+				       item.height,
+				       item.pixelAspect,
+				       item.duration,
+				       item.frameRate);
   var footageLayer = comp.layers.add(item);
 
   return;
 };
 
 function CreateProxy(strOutDir){
+  var strRenderTemplate = app.settings.getSetting("MLVimport","RenderTemplate");
+  var strOutputTemplate = app.settings.getSetting("MLVimport","OutputTemplate");
   for(var i = 1; i <= app.project.items.length;i++){
     var item = app.project.item(i);
+    $.writeln("CompCount:"+item.length);
     if(item instanceof CompItem){	
-      
+      $.writeln(item.name);
       var rqItem = app.project.renderQueue.items.add(item);
-      rqItem.applyTemplate("mlvdraft");
-      rqItem.outputModule(1).applyTemplate("H.264");
-      rqItem.outputModule(1).file = new File(strOutFolder+"\\"+item.name)
+      rqItem.applyTemplate(strRenderTemplate);
+      rqItem.outputModule(1).applyTemplate(strOutputTemplate);
+      rqItem.outputModule(1).file = new File(strOutDir+"\\"+item.name)
     }
     
   }
+  $.writeln(app.project.items.length);
   //    app.project.renderQueue.render();    
 }
 
@@ -229,6 +249,8 @@ function ShowDLG(){
   var strInDir = app.settings.getSetting("MLVimport","indir");
   var strOutDir = app.settings.getSetting("MLVimport","outdir");
   var intFPS = app.settings.getSetting("MLVimport","fps");
+  var strRenderTemplate = app.settings.getSetting("MLVimport","RenderTemplate");
+  var strOutputTemplate = app.settings.getSetting("MLVimport","OutputTemplate");
 
 
   var dlg = new Window('window', 'MLVimport', undefined, {
@@ -280,8 +302,23 @@ function ShowDLG(){
   dlg.grpFPS.alignChildren = ['fill', 'center'];
   //dlg.etFPS = dlg.grpFPS.add('text','aaa');
   dlg.grpFPS.add('statictext',[30, 34, 80, 54], 'FPS:');
-
   dlg.etFPS = dlg.grpFPS.add('edittext',undefined,intFPS);
+
+  //RenderTemplate
+  dlg.grpRT = dlg.pnlDir.add('group');
+  dlg.grpRT.orientation = 'row';
+  dlg.grpRT.alignChildren = ['fill', 'center'];
+  //dlg.etFPS = dlg.grpFPS.add('text','aaa');
+  dlg.grpRT.add('statictext',[30, 34, 80, 54], 'RendrTempl:');
+  dlg.etRT = dlg.grpRT.add('edittext',undefined,strRenderTemplate);
+
+  //OutputTemplate
+  dlg.grpOT = dlg.pnlDir.add('group');
+  dlg.grpOT.orientation = 'row';
+  dlg.grpOT.alignChildren = ['fill', 'center'];
+  //dlg.etFPS = dlg.grpFPS.add('text','aaa');
+  dlg.grpOT.add('statictext',[30, 34, 80, 54], 'OutTempl:');
+  dlg.etOT = dlg.grpOT.add('edittext',undefined,strOutputTemplate);
 
   /* next panel (settings)*/
   //settings panel
@@ -297,12 +334,6 @@ function ShowDLG(){
   dlg.etDumpPath = dlg.grpDumpPath.add('edittext',undefined,strDumpPath);
   dlg.btnDumpPath = dlg.grpDumpPath.add('button', undefined,"dir");
 
-
-  // var myRQ = app.project.renderQueue;
-  // var myTemplate = myRQ.item(1).templates;
-  // alert(myTemplate[1]);	
-
-  
   var btnOk = dlg.add("button", [55, 100, 140, 135], "OK");
   var btnCancel = dlg.add("button", [155, 100, 240, 135], "Cancel");
   btnCancel.onClick = function(){
@@ -315,22 +346,28 @@ function ShowDLG(){
     var strOutDir = dlg.etOutFolder.text;
     var strFPS = dlg.etFPS.text;
     var strDumpPath = dlg.etDumpPath.text;
+    var strRenderTemplate = dlg.etRT.text;
+    var strOutputTemplate = dlg.etOT.text;
 
     //validate
     var intFPS = parseInt(strFPS)
     if(intFPS < 1 || intFPS > 120){
+      $.writeln("invalid FPS value(1-120)");
       alert("invalid FPS value(1-120)");
       return;
     }
     if(strInDir.length == 0){
+      $.writeln("no InDir specified");
       alert("no InDir specified");
       return;
     }
     if(strOutDir.length == 0){
+      $.writeln("no OutDir specified");
       alert("no OutDir specified");
       return;
     }
     if(strDumpPath.length == 0){
+      $.writeln("no DumpPath specified");
       alert("no DumpPath specified");
       return;
     }
@@ -339,14 +376,16 @@ function ShowDLG(){
     app.settings.saveSetting("MLVimport","outdir",strOutDir);
     app.settings.saveSetting("MLVimport","fps",intFPS);
     app.settings.saveSetting("MLVimport","mlvdumpPath",strDumpPath);
+    app.settings.saveSetting("MLVimport","RenderTemplate",strRenderTemplate);
+    app.settings.saveSetting("MLVimport","OutputTemplate",strOutputTemplate);
 
+    $.writeln("Do mlvdump()");
     if(mlvdump(strInDir,strOutDir)== -1){
       return;
     }
     FindDNGFolder(new Folder(strOutDir));
     ImportFootage();
     CreateProxy(strOutDir);
-    
   }
   
   dlg.show();
@@ -364,6 +403,12 @@ function InitDefaults(){
   }
   if(!app.settings.haveSetting("MLVimport","outdir")){
     app.settings.saveSetting("MLVimport","outdir","D:\\jpvideo\\aaa");
+  }
+  if(!app.settings.haveSetting("MLVimport","RenderTemplate")){
+    app.settings.saveSetting("MLVimport","RenderTemplate","ドラフト設定");
+  }
+  if(!app.settings.haveSetting("MLVimport","OutputTemplate")){
+    app.settings.saveSetting("MLVimport","OutputTemplate","H.264");
   }
   
 }   
