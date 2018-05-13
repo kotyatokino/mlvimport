@@ -230,7 +230,6 @@ function CreateProxy(strOutDir){
   var strOutputTemplate = app.settings.getSetting("MLVimport","OutputTemplate");
   for(var i = 1; i <= app.project.items.length;i++){
     var item = app.project.item(i);
-    $.writeln("CompCount:"+item.length);
     if(item instanceof CompItem){	
       $.writeln(item.name);
       var rqItem = app.project.renderQueue.items.add(item);
@@ -240,8 +239,7 @@ function CreateProxy(strOutDir){
     }
     
   }
-  $.writeln(app.project.items.length);
-  //    app.project.renderQueue.render();    
+    app.project.renderQueue.render();    
 }
 
 function ShowDLG(){
