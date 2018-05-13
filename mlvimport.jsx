@@ -235,6 +235,7 @@ function CreateProxy(strOutDir){
       var rqItem = app.project.renderQueue.items.add(item);
       rqItem.applyTemplate(strRenderTemplate);
       rqItem.outputModule(1).applyTemplate(strOutputTemplate);
+      rqItem.outputModule(1).postRenderAction = PostRenderAction.SET_PROXY
       rqItem.outputModule(1).file = new File(strOutDir+"\\"+item.name)
     }
     
