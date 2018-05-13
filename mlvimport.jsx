@@ -38,8 +38,7 @@ function mlvdump(strInPath,strOutPath){
     return -1;
   }   
   if(!insFolOut.exists){
-    alert("Invalid Output folder:No such dir("+strOutPath+")");
-    return -1;
+      insFolOut.create();
   }
 
   var lstFiles = insFolIn.getFiles();
