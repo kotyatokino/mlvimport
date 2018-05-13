@@ -242,6 +242,18 @@ function CreateProxy(strOutDir){
     app.project.renderQueue.render();    
 }
 
+function SendtoPremiere(strAEproj){
+    var fileAEproj = new File(strAEproj);
+    fileAEproj.open("r");
+    var aeproj = fileAEproj.read();
+    fileAEproj.close();
+    
+    var bt = new BridgeTalk;
+    bt.target = "premiere";
+    bt.body = aeproj;
+    bt.send();
+}
+
 function ShowDLG(){
   var strDumpPath = app.settings.getSetting("MLVimport","mlvdumpPath");
   var strInDir = app.settings.getSetting("MLVimport","indir");
@@ -280,8 +292,8 @@ function ShowDLG(){
   dlg.grpInFolder.add('statictext',[30, 13, 80, 33], '.mlv dir');
   
   dlg.etInFolder = dlg.grpInFolder.add('edittext', undefined,strInDir);
-  dlg.btnInFolderIn = dlg.grpInFolder.add('button', undefined,"dir");
-  dlg.btnInFolderIn.alignment = ['right', 'center'];
+  dlg.btnInFolder = dlg.grpInFolder.add('button', undefined,"dir");
+  dlg.btnInFolder.alignment = ['right', 'center'];
 
   //outpath
   dlg.grpOutFolder = dlg.pnlDir.add('group');
@@ -291,8 +303,8 @@ function ShowDLG(){
   dlg.grpOutFolder.add('statictext',[30, 34, 80, 54], 'Out dir');
 
   dlg.etOutFolder = dlg.grpOutFolder.add('edittext', undefined,strOutDir);
-  dlg.btnOutFolderOut = dlg.grpOutFolder.add('button', undefined,"dir");
-  dlg.btnOutFolderOut.alignment = ['right', 'center'];
+  dlg.btnOutFolder = dlg.grpOutFolder.add('button', undefined,"dir");
+  dlg.btnOutFolder.alignment = ['right', 'center'];
 
   //FPS
   dlg.grpFPS = dlg.pnlDir.add('group');
@@ -332,12 +344,55 @@ function ShowDLG(){
   dlg.etDumpPath = dlg.grpDumpPath.add('edittext',undefined,strDumpPath);
   dlg.btnDumpPath = dlg.grpDumpPath.add('button', undefined,"dir");
 
+    dlg.btnInFolder.onClick = function(){
+	var strCur = dlg.etInFolder.text;
+				
+	if (!(new Folder(strCur)).exists) {
+	    strCur = '~';
+	}
+	
+	var strNew = Folder.selectDialog('Intput Dir', strCur);
+	
+	if (strNew !== null) {
+	    dlg.etInFolder.text = strNew.fsName;
+	}
+    }
+    dlg.btnOutFolder.onClick = function(){
+	var strCur = dlg.etOutFolder.text;
+				
+	if (!(new Folder(strCur)).exists) {
+	    strCur = '~';
+	}
+	
+	var strNew = Folder.selectDialog('Output Dir', strCur);
+	
+	if (strNew !== null) {
+	    dlg.etOutFolder.text = strNew.fsName;
+	}
+	
+    }
+
+    dlg.btnDumpPath.onClick = function(){
+	var strCur = dlg.etDumpPath.text;
+				
+	if (!(new File(strCur)).exists) {
+	    strCur = '~';
+	}
+	
+	var strNew = File.selectDialog('mlv_dump.exe?', strCur);
+	
+	if (strNew !== null) {
+	    dlg.etDumpPath.text = strNew.fsName;
+	}
+	
+    }
+
+    
   var btnOk = dlg.add("button", [55, 100, 140, 135], "OK");
   var btnCancel = dlg.add("button", [155, 100, 240, 135], "Cancel");
   btnCancel.onClick = function(){
     dlg.close();
   }
-
   btnOk.onClick = function(){
     dlg.close();
     var strInDir = dlg.etInFolder.text;
